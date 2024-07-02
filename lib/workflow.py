@@ -78,8 +78,15 @@ class Workflow:
 
         # Extract and clean the project path from the project dictionary
         bimcloud_path = project_dict["$path"]
-        bimcloud_path = bimcloud_path.replace("Project Root/", "")
-        bimcloud_path = bimcloud_path.replace(file_name, "")
+        # bimcloud_path = bimcloud_path.replace("Project Root/", "")
+        # bimcloud_path = bimcloud_path.replace(file_name, "")
+        if bimcloud_path.startswith("Project Root/"):
+            bimcloud_path = bimcloud_path[len("Project Root/"):]
+        bimcloud_path = bimcloud_path.split('/')
+        if len(bimcloud_path) > 1:
+            bimcloud_path = '/'.join(bimcloud_path[:-1])  # all parts except the last one
+        else:
+            bimcloud_path = ""
         bimcloud_path = PureWindowsPath(bimcloud_path)
 
         # Get the local path on the server where the project is stored
@@ -103,22 +110,26 @@ class Workflow:
         print(local_path)
         print(project_dict["$modifiedDate"])
         print(last_edit_datetime)
-        print(model_path)
-        print(target_path)
+        print(type(model_path))
+        print("model_path: ", model_path)
+        print(type(target_path))
+        print("target_path: ", target_path)
+        print(type(target_file))
+        print("target_file: ", target_file)
 
         try:
             # Check if the project has been modified within the last 24 hours
             if self._should_backup(last_edit_datetime):
                 # Perform the backup operation
-                self._perform_backup(file_name, model_path, target_path)
+                self._perform_backup(model_path, target_path, target_file)
                 # Verify if the backup was successful
                 self._verify_backup(target_file)
             else:
                 # Log that no backup is needed if the project hasn't been modified in the last 24 hours
-                logging.info(f"No backup model needed at {bimcloud_path}")
+                logging.info(f"No backup model needed at {bimcloud_path}\\{file_name}")
         except Exception as e:
             # Log any errors encountered during the backup process
-            logging.error(f"Error processing model at {bimcloud_path}: {e}")
+            logging.error(f"Error processing model at {bimcloud_path}\\{file_name}: {e}")
 
     def _should_backup(self, last_edit_datetime):
         # compare the last edit time to now time and sure  it less than 24 h (86400 s)
@@ -134,6 +145,12 @@ class Workflow:
             model_path (Path): The path to the model's backup directory.
             target_path (Path): The path to the target backup directory.
         """
+
+        # # Ensure model_path and target_path are Path objects
+        # if not isinstance(model_path, Path):
+        #     model_path = Path(model_path)
+        # if not isinstance(target_path, Path):
+        #     target_path = Path(target_path)
 
         # Check if the source directory exists
         if not model_path.exists():
