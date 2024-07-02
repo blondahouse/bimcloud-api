@@ -174,7 +174,7 @@ class Workflow:
         self._auth_context = self._manager_api.get_token_by_password_grant(self.username, self.password, self.client_id)
 
         if self._auth_context is None:
-            logging.error(f"Error in login process: {e}")
+            logging.error("Error in login process")
             quit(1)
         else:
             logging.info(f"Session ends at {Workflow.convert_timestamp(self._auth_context.access_token_exp)}")
